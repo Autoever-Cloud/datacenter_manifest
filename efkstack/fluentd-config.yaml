@@ -1,0 +1,178 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  namespace: efkstack
+data:
+  fluent.conf: |
+    ############################################################
+    # 1) Fluent Bit → Fluentd 입력 (forward)
+    ############################################################
+    <source>
+      @type forward
+      port 24224
+      bind 0.0.0.0
+    </source>
+
+    ############################################################
+    # 2) 서비스 애플리케이션 로그
+    #    - 태그: service.application.log
+    #    - 케이스 A: JSON (FB Merge_Log=On이면 상위 필드로 병합되어 옴)
+    #    - 케이스 B: Nginx형 access 로그(plain) → nginx 파서
+    #    - JSON/NGINX 둘 다 아닐 때는 원본 유지
+    ############################################################
+    <filter service.application.log>
+      @type parser
+      key_name log
+      remove_key_name_after_parse true
+      reserve_data true
+      <parse>
+        @type json
+      </parse>
+    </filter>
+
+    <match service.application.log>
+      @type stdout
+    </match>
+
+    ############################################################
+    # 3) 시스템 로그 (멀티라인 결합 → 정규식 파싱)
+    #    - 태그:
+    #       system.oom.log  : OOM 3줄 블록 시작  [xxxxx] Out of memory: ...
+    #       system.mce.log  : MCE 4줄 블록 시작  [xxxxx] mce: [Hardware Error] ...
+    #       system.disk.log : DISK 2~4줄 블록 시작 [xxxxx] sd ... / [xxxxx] ata...
+    #       system.auth.log : AUTH 단일 라인
+    ############################################################
+
+    # ------------------------------
+    # 3-1) OOM (3줄 블록) : concat
+    # ------------------------------
+    <filter system.oom.log>
+      @type concat
+      key log
+      multiline_start_regexp /^\[\d+\.\d+\]\s+Out of memory:/
+      flush_interval 2s
+      timeout_label @CONCAT_TIMEOUT_OOM
+    </filter>
+
+    <label @CONCAT_TIMEOUT_OOM>
+      <match system.oom.log>
+        @type relabel
+        @label @PARSE_OOM
+      </match>
+    </label>
+
+    # OOM 파싱 (첫 줄에서 핵심 필드 추출)
+    <label @PARSE_OOM>
+      <filter system.oom.log>
+        @type parser
+        key_name log
+        reserve_data true
+        inject_key_prefix parsed_
+        <parse>
+          @type regexp
+          expression /^\[(?<ts>\d+\.\d+)\]\s+Out of memory:\s+Killed process\s+(?<pid>\d+)\s+\((?<comm>[^)]+)\)\s+total-vm:(?<total_vm>\d+)kB,\s+anon-rss:(?<anon_rss>\d+)kB/i
+        </parse>
+      </filter>
+      <match system.oom.log>
+        @type stdout
+      </match>
+    </label>
+
+    # ------------------------------
+    # 3-2) MCE (4줄 블록) : concat
+    # ------------------------------
+    <filter system.mce.log>
+      @type concat
+      key log
+      multiline_start_regexp /^\[\d+\.\d+\]\s+mce:/
+      flush_interval 2s
+      timeout_label @CONCAT_TIMEOUT_MCE
+    </filter>
+
+    <label @CONCAT_TIMEOUT_MCE>
+      <match system.mce.log>
+        @type relabel
+        @label @PARSE_MCE
+      </match>
+    </label>
+
+    # MCE 파싱 (첫 줄의 요약 필드 추출)
+    <label @PARSE_MCE>
+      <filter system.mce.log>
+        @type parser
+        key_name log
+        reserve_data true
+        inject_key_prefix parsed_
+        <parse>
+          @type regexp
+          expression /^\[(?<ts>\d+\.\d+)\]\s+mce:\s+\[Hardware Error\]:\s+CPU\s+(?<cpu>\d+):\s+Machine Check:\s+(?<summary>.*)$/i
+        </parse>
+      </filter>
+      <match system.mce.log>
+        @type stdout
+      </match>
+    </label>
+
+    # ------------------------------
+    # 3-3) DISK (2~4줄 블록) : concat
+    # ------------------------------
+    <filter system.disk.log>
+      @type concat
+      key log
+      multiline_start_regexp /^\[\d+\.\d+\]\s+(sd|ata)/
+      flush_interval 2s
+      timeout_label @CONCAT_TIMEOUT_DISK
+    </filter>
+
+    <label @CONCAT_TIMEOUT_DISK>
+      <match system.disk.log>
+        @type relabel
+        @label @PARSE_DISK
+      </match>
+    </label>
+
+    # DISK 파싱 (I/O error 또는 SATA link down을 넓게 커버)
+    <label @PARSE_DISK>
+      <filter system.disk.log>
+        @type parser
+        key_name log
+        reserve_data true
+        inject_key_prefix parsed_
+        <parse>
+          @type regexp
+          expression /^(?<head>\[\d+\.\d+\].*?)(?<io>blk_update_request: I\/O error, dev (?<device>[a-z0-9]+), sector (?<sector>\d+))?|^(?<sata>\[\d+\.\d+\]\s+ata\d+: SATA link down.*)$/im
+        </parse>
+      </filter>
+      <match system.disk.log>
+        @type stdout
+      </match>
+    </label>
+
+    # ------------------------------
+    # 3-4) AUTH (단일 라인)
+    # ------------------------------
+    <match logs.system.auth>
+      @type parser
+      key_name log
+      <parse>
+        @type syslog
+      </parse>
+      
+      # [변경] Kafka 대신 표준 출력(stdout)으로 결과 확인
+      @type stdout
+    </match>
+
+    ############################################################
+    # 4) 매칭 안 된 나머지 (디버깅)
+    ############################################################
+    <match service.unmatched.log>
+      @type stdout
+    </match>
+    <match system.unmatched.log>
+      @type stdout
+    </match>
+    <match **>
+      @type stdout
+    </match>
+

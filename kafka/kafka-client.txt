@@ -1,0 +1,2 @@
+kubectl -n kafka run kafka-client --rm -it \
+  --image=bitnami/kafka:3.7.1 -- bash

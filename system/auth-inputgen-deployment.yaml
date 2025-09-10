@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-inputgen-deployment
+  namespace: system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      system: auth
+  template:
+    metadata:
+      labels:
+        system: auth
+    spec:
+      containers:
+        - name: auth-inputgen
+          image: kyla333/inputgen4

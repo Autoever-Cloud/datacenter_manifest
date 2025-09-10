@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-client-provisioner
+  namespace: nfs-storage
+  labels:
+    app: nfs-client-provisioner
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nfs-client-provisioner
+  template:
+    metadata:
+      labels:
+        app: nfs-client-provisioner
+    spec:
+      serviceAccountName: nfs-client-provisioner
+      containers:
+        - name: nfs-client-provisioner
+          image: k8s.gcr.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2
+          volumeMounts:
+            - name: nfs-client-root
+              mountPath: /persistentvolumes
+          env:
+            - name: PROVISIONER_NAME # 이 값들은 정의된 변수명임 
+              value: k8s-sigs.io/nfs-subdir-external-provisioner # 이건 킵해놔야 함 
+            - name: NFS_SERVER
+              value: "192.168.1.200" # 킵해둔 NFS 서버 IP
+            - name: NFS_PATH
+              value: "/srv/nfs/kubedata" # 킵해둔 NFS 공유 경로
+      volumes:
+        - name: nfs-client-root
+          nfs:
+            server: "192.168.1.200" # NFS 서버 IP
+            path: "/srv/nfs/kubedata" #  NFS 공유 경로

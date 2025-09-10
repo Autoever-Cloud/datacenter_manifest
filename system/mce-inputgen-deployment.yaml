@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mce-inputgen-deployment
+  namespace: system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      system: mce
+  template:
+    metadata:
+      labels:
+        system: mce
+    spec:
+      containers:
+        - name: mce-inputgen
+          image: kyla333/inputgen2
