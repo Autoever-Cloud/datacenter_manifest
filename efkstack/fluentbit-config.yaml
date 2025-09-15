@@ -22,7 +22,7 @@ data:
     [INPUT]
         Name                  tail
         Path                  /var/log/containers/*_service_*.log
-        Tag                   kube.var.log.containers.service
+        Tag                   kube.*
         Parser                cri
         Mem_Buf_Limit         10MB
         Skip_Long_Lines       On
@@ -34,7 +34,7 @@ data:
     [INPUT]
         Name                  tail
         Path                  /var/log/containers/*_system_*.log
-        Tag                   kube.var.log.containers.system
+        Tag                   kube.*
         Parser                cri
         Mem_Buf_Limit         10MB
         Skip_Long_Lines       On
@@ -48,8 +48,9 @@ data:
     # K8s 메타데이터 병합 (JSON이면 필드 병합)
     [FILTER]
         Name                  kubernetes
-        Match                 kube.*
+        Match                 kube.var.log.containers.*
         Kube_URL              https://kubernetes.default.svc:443
+        Kube_Tag_Prefix       kube.var.log.containers.
         Merge_Log             On
         Keep_Log              Off
         K8S-Logging.Exclude   On
@@ -58,19 +59,24 @@ data:
     # 서비스: app=service → 최종 태그 service.application.log
     [FILTER]
         Name                  rewrite_tag
-        Match                 kube.var.log.containers.service
+        Match                 kube.var.log.containers.service*
         Rule                  $kubernetes['labels']['app'] ^service$ service.application.log false
         Rule                  $log ^.*$ service.unmatched.log false
 
-    # 시스템: system 라벨값에 따라 최종 태그 분기
+    # 시스템: system 라벨값에 따라 최종 태그 분기:
     [FILTER]
         Name                  rewrite_tag
-        Match                 kube.var.log.containers.system
-        Rule                  $kubernetes['labels']['system'] ^oom$  system.oom.log  false
-        Rule                  $kubernetes['labels']['system'] ^mce$  system.mce.log  false
-        Rule                  $kubernetes['labels']['system'] ^disk$ system.disk.log false
-        Rule                  $kubernetes['labels']['system'] ^auth$ system.auth.log false
+        Match                 kube.var.log.containers.*system*
+        Rule                  $kubernetes['labels']['system'] .*oom.*  system.oom.log  false
+        Rule                  $kubernetes['labels']['system'] .*mce.*  system.mce.log  false
+        Rule                  $kubernetes['labels']['system'] .*disk.* system.disk.log false
+        Rule                  $kubernetes['labels']['system'] .*auth.* system.auth.log false
         Rule                  $log ^.*$ system.unmatched.log false
+
+    [FILTER]
+        Name                   modify
+        Match                  *
+        Remove                 kubernetes
 
     # =======================
     # OUTPUTS
@@ -85,6 +91,9 @@ data:
         net.keepalive         On
         net.connect_timeout   10
         net.dns.resolver      LEGACY
+    [OUTPUT]
+        Name                  stdout
+        Match                 *  
 
   parsers.conf: |
     # CRI (containerd) 단일 라인 파서

@@ -21,16 +21,6 @@ data:
     #    - 케이스 B: Nginx형 access 로그(plain) → nginx 파서
     #    - JSON/NGINX 둘 다 아닐 때는 원본 유지
     ############################################################
-    <filter service.application.log>
-      @type parser
-      key_name log
-      remove_key_name_after_parse true
-      reserve_data true
-      <parse>
-        @type json
-      </parse>
-    </filter>
-
     <match service.application.log>
       @type stdout
     </match>
