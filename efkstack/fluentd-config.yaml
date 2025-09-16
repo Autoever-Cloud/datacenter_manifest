@@ -29,7 +29,7 @@ data:
 
       <buffer>
         @type memory
-        flush_interval 5s
+        flush_interval 1s
         flush_at_shutdown true
         flush_thread_count 2
         chunk_limit_size 1m
@@ -53,7 +53,7 @@ data:
 
       <buffer>
         @type memory
-        flush_interval 5s
+        flush_interval 1s
         flush_at_shutdown true
         flush_thread_count 2
         chunk_limit_size 1m
@@ -77,7 +77,7 @@ data:
 
       <buffer>
         @type memory
-        flush_interval 5s
+        flush_interval 1s
         flush_at_shutdown true
         flush_thread_count 2
         chunk_limit_size 1m
@@ -101,7 +101,7 @@ data:
 
       <buffer>
         @type memory
-        flush_interval 5s
+        flush_interval 1s
         flush_at_shutdown true
         flush_thread_count 2
         chunk_limit_size 1m
@@ -125,7 +125,7 @@ data:
 
       <buffer>
         @type memory
-        flush_interval 5s
+        flush_interval 1s
         flush_at_shutdown true
         flush_thread_count 2
         chunk_limit_size 1m
