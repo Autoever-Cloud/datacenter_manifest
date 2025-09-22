@@ -1,0 +1,36 @@
+# prom-agent-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prom-agent-config
+  namespace: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+      external_labels:
+        cluster: datacenter
+
+    scrape_configs:
+    - job_name: 'node-exporter'
+      kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names: ['prometheus']
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
+        action: keep
+        regex: prometheus-node-exporter
+      - source_labels: [__meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: metrics
+      - target_label: job
+        replacement: node-exporter
+
+    remote_write:
+    - url: http://<LMV_NODE_IP>:32090/api/v1/write
+      queue_config:
+        max_shards: 8
+        capacity: 20000
+        max_samples_per_send: 5000
+

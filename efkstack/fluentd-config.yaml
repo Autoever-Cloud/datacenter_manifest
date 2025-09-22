@@ -39,12 +39,12 @@ data:
     </match>
 
     ############################################################
-    # 3-1) 시스템 로그 → OOM (system-oom-topic)
+    # 3-1) kmsg  애플리케이션 로그 → Kafka 전송 (system-kmsg-topic)
     ############################################################
-    <match system.oom.log>
+    <match system.kmsg.log>
       @type kafka2
       brokers 192.168.1.210:9094
-      topic system-oom-topic
+      topic system-kmsg-topic
       use_event_time true
 
       <format>
@@ -63,56 +63,19 @@ data:
     </match>
 
     ############################################################
-    # 3-2) 시스템 로그 → MCE (system-mce-topic)
+    # 3-2) 시스템 로그 → AUTH (system-auth-topic)
     ############################################################
-    <match system.mce.log>
-      @type kafka2
-      brokers 192.168.1.210:9094
-      topic system-mce-topic
-      use_event_time true
-
-      <format>
-        @type json
-      </format>
-
-      <buffer>
-        @type memory
-        flush_interval 1s
-        flush_at_shutdown true
-        flush_thread_count 2
-        chunk_limit_size 1m
-        retry_max_interval 30
-        retry_forever true
-      </buffer>
-    </match>
-
-    ############################################################
-    # 3-3) 시스템 로그 → DISK (system-disk-topic)
-    ############################################################
-    <match system.disk.log>
-      @type kafka2
-      brokers 192.168.1.210:9094
-      topic system-disk-topic
-      use_event_time true
-
-      <format>
-        @type json
-      </format>
-
-      <buffer>
-        @type memory
-        flush_interval 1s
-        flush_at_shutdown true
-        flush_thread_count 2
-        chunk_limit_size 1m
-        retry_max_interval 30
-        retry_forever true
-      </buffer>
-    </match>
-
-    ############################################################
-    # 3-4) 시스템 로그 → AUTH (system-auth-topic)
-    ############################################################
+    <filter system.auth.log>
+      @type parser
+      key_name log
+      reserve_data true
+      remove_key_name_field true
+      <parse>
+        @type regexp
+        expression /^(?<timestamp>[A-Z][a-z]{2}\s+\d+\s[\d:]+)\s+(?<host>\S+)\s+sshd\[(?<pid>\d+)\]:\s+(?<auth_result>Accepted|Failed)\s+password\s+for\s+(?:invalid user\s+)?(?<user>\S+)\s+from\s+(?<ip>[0-9\.]+)\s+port\s+(?<port>\d+)\s+ssh2$/
+      </parse>
+    </filter>
+    
     <match system.auth.log>
       @type kafka2
       brokers 192.168.1.210:9094

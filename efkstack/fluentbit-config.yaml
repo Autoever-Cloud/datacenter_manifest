@@ -67,10 +67,8 @@ data:
     [FILTER]
         Name                  rewrite_tag
         Match                 kube.var.log.containers.*system*
-        Rule                  $kubernetes['labels']['system'] .*oom.*  system.oom.log  false
-        Rule                  $kubernetes['labels']['system'] .*mce.*  system.mce.log  false
-        Rule                  $kubernetes['labels']['system'] .*disk.* system.disk.log false
         Rule                  $kubernetes['labels']['system'] .*auth.* system.auth.log false
+        Rule                  $kubernetes['labels']['system'] .*kmsg.* system.kmsg.log false
         Rule                  $log ^.*$ system.unmatched.log false
 
     [FILTER]

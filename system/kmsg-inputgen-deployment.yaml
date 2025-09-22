@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mce-inputgen-deployment
+  name: kmsg-inputgen-deployment
   namespace: system
 spec:
   replicas: 2
   selector:
     matchLabels:
-      system: mce
+      system: kmsg
   template:
     metadata:
       labels:
-        system: mce
+        system: kmsg
     spec:
       containers:
-        - name: mce-inputgen
-          image: kyla333/inputgen2
+        - name: kmsg-inputgen
+          image: kyla333/inputgen5
