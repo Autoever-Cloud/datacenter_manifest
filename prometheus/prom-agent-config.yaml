@@ -12,25 +12,25 @@ data:
         cluster: datacenter
 
     scrape_configs:
-    - job_name: 'node-exporter'
-      kubernetes_sd_configs:
-      - role: endpoints
-        namespaces:
-          names: ['prometheus']
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
-        action: keep
-        regex: prometheus-node-exporter
-      - source_labels: [__meta_kubernetes_endpoint_port_name]
-        action: keep
-        regex: metrics
-      - target_label: job
-        replacement: node-exporter
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names: ['prometheus']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: node-exporter
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: metrics
+          - target_label: job
+            replacement: node-exporter
 
-    remote_write:
-    - url: http://<LMV_NODE_IP>:32090/api/v1/write
-      queue_config:
-        max_shards: 8
-        capacity: 20000
-        max_samples_per_send: 5000
+    remote_write:        # ✅ scrape_configs와 같은 레벨
+      - url: http://192.168.1.231:9090/api/v1/write
+        queue_config:
+          max_shards: 4
+          capacity: 10000
+          max_samples_per_send: 1000
 
