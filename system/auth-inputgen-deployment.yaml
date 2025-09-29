@@ -4,7 +4,7 @@ metadata:
   name: auth-inputgen-deployment
   namespace: system
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       system: auth
@@ -12,7 +12,23 @@ spec:
     metadata:
       labels:
         system: auth
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
     spec:
       containers:
         - name: auth-inputgen
           image: kyla333/inputgen4
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: metrics
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+

@@ -72,7 +72,7 @@ data:
       remove_key_name_field true
       <parse>
         @type regexp
-        expression /^(?<timestamp>[A-Z][a-z]{2}\s+\d+\s[\d:]+)\s+(?<host>\S+)\s+sshd\[(?<pid>\d+)\]:\s+(?<auth_result>Accepted|Failed)\s+password\s+for\s+(?:invalid user\s+)?(?<user>\S+)\s+from\s+(?<ip>[0-9\.]+)\s+port\s+(?<port>\d+)\s+ssh2$/
+        expression /^(?<timestamp>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+\+\d{2}:\d{2})\s+(?<host>\S+)\s+sshd\[(?<pid>\d+)\]:\s+(?<auth_result>Accepted|Failed)\s+password\s+for\s+(?:invalid user\s+)?(?<user>\S+)\s+from\s+(?<ip>[0-9\.]+)\s+port\s+(?<port>\d+)\s+ssh2$/
       </parse>
     </filter>
     

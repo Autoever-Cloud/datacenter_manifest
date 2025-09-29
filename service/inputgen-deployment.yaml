@@ -4,7 +4,7 @@ metadata:
   name: service-inputgen-deployment
   namespace: service
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: service
@@ -12,7 +12,23 @@ spec:
     metadata:
       labels:
         app: service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
     spec:
       containers:
         - name: inputgen00
           image: kyla333/inputgen0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: metrics
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+

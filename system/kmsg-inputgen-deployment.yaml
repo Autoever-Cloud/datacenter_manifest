@@ -4,7 +4,7 @@ metadata:
   name: kmsg-inputgen-deployment
   namespace: system
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       system: kmsg
@@ -12,7 +12,23 @@ spec:
     metadata:
       labels:
         system: kmsg
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
     spec:
       containers:
         - name: kmsg-inputgen
           image: kyla333/inputgen5
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: metrics
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
